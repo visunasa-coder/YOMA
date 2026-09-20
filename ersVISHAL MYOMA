@@ -1,0 +1,73 @@
+[1mdiff --git a/src/yoma/runtime.py b/src/yoma/runtime.py[m
+[1mindex 3f5ef1b..232008e 100644[m
+[1m--- a/src/yoma/runtime.py[m
+[1m+++ b/src/yoma/runtime.py[m
+[36m@@ -1,11 +1,11 @@[m
+[31m-"""Embedded YOMA runtime lifecycle management."""[m
+[32m+[m[32m"""Embedded YOMA runtime lifecycle and task execution."""[m
+ [m
+ from __future__ import annotations[m
+ [m
+ from dataclasses import dataclass[m
+ from enum import StrEnum[m
+ import threading[m
+[31m-from typing import Callable[m
+[32m+[m[32mfrom typing import Any, Callable[m
+ [m
+ [m
+ class RuntimeState(StrEnum):[m
+[36m@@ -29,10 +29,11 @@[m [mclass RuntimeError(Exception):[m
+ [m
+ [m
+ class YomaRuntime:[m
+[31m-    """Lifecycle manager for the embedded YOMA runtime.[m
+[32m+[m[32m    """Lifecycle and execution facade for the embedded YOMA runtime.[m
+ [m
+[31m-    This layer owns runtime lifecycle only. It does not directly access[m
+[31m-    databases, files, tools, agents, or external providers.[m
+[32m+[m[32m    The runtime owns lifecycle and delegates task execution to an injected[m
+[32m+[m[32m    executor. It does not directly access databases, files, tools, agents,[m
+[32m+[m[32m    or external providers.[m
+     """[m
+ [m
+     def __init__([m
+[36m@@ -43,12 +44,14 @@[m [mclass YomaRuntime:[m
+         wake_word_enabled: bool = False,[m
+         on_start: Callable[[], None] | None = None,[m
+         on_stop: Callable[[], None] | None = None,[m
+[32m+[m[32m        executor: Callable[[Any], Any] | None = None,[m
+     ) -> None:[m
+         self._mode = mode[m
+         self._voice_enabled = voice_enabled[m
+         self._wake_word_enabled = wake_word_enabled[m
+         self._on_start = on_start[m
+         self._on_stop = on_stop[m
+[32m+[m[32m        self._executor = executor[m
+         self._state = RuntimeState.STOPPED[m
+         self._lock = threading.RLock()[m
+ [m
+[36m@@ -104,6 +107,24 @@[m [mclass YomaRuntime:[m
+ [m
+             self._state = RuntimeState.STOPPED[m
+ [m
+[32m+[m[32m    def execute(self, task: Any) -> Any:[m
+[32m+[m[32m        """Execute a task through the configured runtime executor."""[m
+[32m+[m[32m        with self._lock:[m
+[32m+[m[32m            if self._state != RuntimeState.RUNNING:[m
+[32m+[m[32m                raise RuntimeError("runtime is not running")[m
+[32m+[m
+[32m+[m[32m            executor = self._executor[m
+[32m+[m
+[32m+[m[32m        if executor is None:[m
+[32m+[m[32m            raise RuntimeError("runtime executor is not configured")[m
+[32m+[m
+[32m+[m[32m        try:[m
+[32m+[m[32m            return executor(task)[m
+[32m+[m[32m        except RuntimeError:[m
+[32m+[m[32m            raise[m
+[32m+[m[32m        except Exception as exc:[m
+[32m+[m[32m            raise RuntimeError("runtime task execution failed") from exc[m
+[32m+[m
+     def status(self) -> RuntimeStatus:[m
+         with self._lock:[m
+             return RuntimeStatus([m

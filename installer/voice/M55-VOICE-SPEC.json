@@ -1,0 +1,30 @@
+﻿{
+    "milestone":  "M55",
+    "browser_setup":  true,
+    "local_url":  "http://127.0.0.1:8766/",
+    "service":  "YomaControlServer",
+    "voice":  {
+                  "microphone":  true,
+                  "stt":  "faster-whisper",
+                  "tts":  "Piper",
+                  "model":  "en_US-lessac-medium",
+                  "user_session_required":  true
+              },
+    "subdivisions":  {
+                         "M55.11":  "Voice runtime packaging",
+                         "M55.12":  "Whisper/STT deployment",
+                         "M55.13":  "Piper/TTS deployment",
+                         "M55.14":  "User-session voice agent",
+                         "M55.15":  "Microphone permission/setup",
+                         "M55.16":  "Speaker/audio test",
+                         "M55.17":  "STT-AI-TTS pipeline test",
+                         "M55.18":  "Voice startup with Windows login",
+                         "M55.19":  "Voice/service security boundary",
+                         "M55.20":  "Voice installer validation"
+                     },
+    "security":  {
+                     "execution_authority":  false,
+                     "self_authorized_execution":  false,
+                     "human_approval_required":  true
+                 }
+}

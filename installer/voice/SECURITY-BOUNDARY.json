@@ -1,0 +1,10 @@
+﻿{
+  "voice_execution_authority": false,
+  "self_authorized_execution": false,
+  "human_approval_required": true,
+  "voice_agent_role": "input_output_only",
+  "control_server_role": "governed_control",
+  "microphone_access": "user_session",
+  "tts": "Piper",
+  "stt": "faster-whisper"
+}

@@ -1,0 +1,119 @@
+name: YOMA Windows release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version
+        required: true
+        default: '0.55.0'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  release:
+    # SignPath Open Source Code Signing origin verification requires the
+    # pre-signing jobs to run on GitHub-hosted agents. Do not replace this
+    # with an untrusted local runner for production signing.
+    runs-on: windows-latest
+    env:
+      SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+      SIGNPATH_PROJECT_SLUG: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+      SIGNPATH_SIGNING_POLICY_SLUG: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+      SIGNPATH_APP_ARTIFACT_CONFIGURATION_SLUG: ${{ vars.SIGNPATH_APP_ARTIFACT_CONFIGURATION_SLUG }}
+      SIGNPATH_INSTALLER_ARTIFACT_CONFIGURATION_SLUG: ${{ vars.SIGNPATH_INSTALLER_ARTIFACT_CONFIGURATION_SLUG }}
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install release dependencies
+        shell: powershell
+        run: python -m pip install --disable-pip-version-check --requirement requirements-release.txt
+
+      - name: Run tests
+        shell: powershell
+        run: python -m pytest
+
+      - name: Validate SignPath configuration
+        shell: powershell
+        env:
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+        run: .\scripts\validate-signpath-config.ps1
+
+      - name: Build unsigned SignPath application input
+        shell: powershell
+        run: .\scripts\build-release.ps1 -Version '${{ inputs.version }}' -PythonExecutable (Get-Command python.exe).Source -PrepareSignPath
+
+      - name: Upload YOMA executables for SignPath
+        id: upload-owned
+        uses: actions/upload-artifact@v4
+        with:
+          name: yoma-owned-executables-${{ inputs.version }}
+          path: release/signpath-input/yoma-owned
+          if-no-files-found: error
+
+      - name: Submit YOMA executable signing request
+        id: sign-owned
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_APP_ARTIFACT_CONFIGURATION_SLUG }}
+          github-artifact-id: ${{ steps.upload-owned.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: release/signpath-signed-app
+          parameters: |
+            version: "${{ inputs.version }}"
+
+      - name: Build installer from returned signed executables
+        shell: powershell
+        run: .\scripts\finalize-signpath-app.ps1 -SignedOwnedRoot .\release\signpath-signed-app -Version '${{ inputs.version }}'
+
+      - name: Upload installer for SignPath
+        id: upload-installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: yoma-installer-${{ inputs.version }}
+          path: release/signpath-installer-input/YOMA-Setup.exe
+          archive: false
+          if-no-files-found: error
+
+      - name: Submit installer signing request
+        id: sign-installer
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_INSTALLER_ARTIFACT_CONFIGURATION_SLUG }}
+          github-artifact-id: ${{ steps.upload-installer.outputs.artifact-id }}
+          wait-for-completion: true
+          skip-decompress: true
+          output-artifact-directory: release/signpath-signed-installer
+          parameters: |
+            version: "${{ inputs.version }}"
+
+      - name: Verify and create authoritative release ZIP
+        shell: powershell
+        run: .\scripts\complete-signpath-release.ps1 -SignedInstallerPath .\release\signpath-signed-installer\YOMA-Setup.exe -Version '${{ inputs.version }}'
+
+      - name: Upload verified release ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: yoma-windows-${{ inputs.version }}
+          path: release/zip/*.zip
+          if-no-files-found: error

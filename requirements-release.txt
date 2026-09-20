@@ -1,0 +1,18 @@
+# YOMA Windows release baseline. Versions reflect the existing M55 build environment.
+# Install with Python 3.12 in a clean release environment.
+fastapi==0.141.1
+python-multipart==0.0.20
+uvicorn[standard]==0.52.4
+pypdf==6.18.0
+python-docx==1.2.0
+openpyxl==3.1.5
+PyInstaller==6.22.2
+pywin32==312
+faster-whisper==1.2.1
+piper-tts==1.8.0
+onnxruntime==1.30.0
+sounddevice==0.5.6
+av==18.1.0
+numpy==2.5.3
+pytest==8.4.2
+httpx==0.28.1

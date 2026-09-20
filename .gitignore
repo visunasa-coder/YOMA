@@ -1,0 +1,57 @@
+.venv/
+.venv-*/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+data/
+*.db
+*.sqlite3
+*.sqlite
+*.sqlite-*
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.cer
+*.crt
+secrets/
+
+
+# Pytest temporary artifacts
+.pytest-tmp*/
+
+.pytest-temp*/
+.aider*
+
+# Local tooling, generated test output, and personal validation artifacts
+.firebase-cli/
+.pytest-*/
+.m55-*/
+.m55_*
+*.wav
+*.log
+*.bak
+*.zip
+src/yoma.egg-info/
+
+# Historical local milestone/package directories
+FINAL-TEST/
+M46-Test/
+YOMA-FINAL-*/
+YOMA-LATEST-*/
+YOMA-M46-*/
+YOMA-VOICE-*/
+_YOMA_FINAL_RELEASE/
+
+# Local Vosk speech model
+models/
+
+# Local release environments and generated release outputs
+.release-venv/
+.release-inno/
+release/
+backups/
+build/
+dist/

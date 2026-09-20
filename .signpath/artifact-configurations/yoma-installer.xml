@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <parameters>
+    <parameter name="version" required="true" />
+  </parameters>
+  <pe-file path="YOMA-Setup.exe" product-name="YOMA" product-version="${version}" file-version="${version}">
+    <authenticode-sign hash-algorithm="sha256" />
+  </pe-file>
+</artifact-configuration>
